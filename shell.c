@@ -13,8 +13,8 @@
 int main(int argc, char *argv[]){
     return 0;
 }
-
-int exit(){
+//when called exits shell
+int ex(){
     printf("Exiting shell");
     exit(0);
 }
@@ -26,8 +26,16 @@ int help(){
     printf("-cd: takes a directory and copies it to another directory\n");
     printf("-exit: exits the shell");
 }
-
+//When called print the current working directory to standard output
 int pwd(){
+    char pwd[1024];
+    if(getcwd(pwd, sizeof(pwd)) != NULL){
+        printf("pwd: %s\n", pwd);
+    }
+    else{
+        printf("Error retriving pwd");
+        exit(EXIT_FAILURE);
+    }
 
 }
 int cd(){
