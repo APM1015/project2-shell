@@ -1,0 +1,34 @@
+//main
+main()
+  use parse function to continously allow user to input
+  call other functions
+  
+//parse  
+parse()
+  //input code provided in discord
+
+//exit function
+ex()
+  if called
+    print an exit statement
+  then exit shell
+
+//help manuel
+help()
+  print statements of what each command does
+  
+//getting pwd
+pwd()
+  create pwd variable to hold pwd
+  get pwd
+  if pwd is not null
+    then print it
+  else //pwd is null
+    print error message
+
+//coppy directory to directory
+cd()
+  create variables for and open arg1 and arg2
+  while arg1 is not null
+    use snprintf to transfer to agr2 //transfer to destination directory
+  close directory
