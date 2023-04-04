@@ -15,22 +15,47 @@ int ex();
 int help();
 int pwd();
 char **parse(char *line, char *delim);
+int pip(int argc);
+int out(int argc, const char *f1);
+int in(int argc, const char *f1);
 
 
 int main(int argc, char *argv[]){
-    char _line[1000] = "a line of text\n";
-    char * line = strdup(_line);
-    char ** array = parse(line," \n");
 
-    if (array==NULL)
-        exit(1);
+    char line[1024];
 
-    int i = 0;
-    while (array[i]!=NULL)
-        printf("%s\n",array[i++]);
+    while(1){
+        printf("echo>");
+        fgets(line, 1024, stdin);
+        line[strlen(line) - 1] = '\0';
+        char **args = parse(line, " ");
 
-    free(array);
-    free(line);
+        if(args == NULL){
+            //nothing
+        }
+        else if(strcmp(args[0], "exit") == 0){
+            ex();
+        }
+        else if(strcmp(args[0], "pwd") == 0){
+            pwd();
+        }
+        else if(strcmp(args[0], "help") == 0){
+            help();
+        }
+        else if(strcmp(args[0], "cd") == 0){
+            cd(argc, argv[1], argv[2]);
+        }
+        else if(strcmp(args[0], ">") == 0){
+            out(argc, argv[1]);
+        }
+        else if(strcmp(args[0], "<") == 0){
+            in(argc, argv[1]);
+        }
+        else{
+
+        }
+    }
+
     return 0;
 }
 
@@ -76,12 +101,14 @@ int ex(){
 //help command: Prints out pwd with letters for command
 //with what each command does
 int help(){
-
-    printf("-pwd: prints out the current working directory\n");
-    printf("-cd: takes a directory and copies it to another directory\n");
-    printf("-wait: wait for all background processes to finish\n");
-    printf("help: print the manuel\n");
-    printf("-exit: exits the shell\n");
+    printf("-----------------");
+    printf("\nManuel for Shell\n");;
+    printf("------------------\n");
+    printf("\t-pwd: prints out the current working directory\n");
+    printf("\t-cd: takes a directory and copies it to another directory\n");
+    printf("\t-wait: wait for all background processes to finish\n");
+    printf("\t-help: print the manuel\n");
+    printf("\t-exit: exits the shell\n");
 }
 //When called print the current working directory to standard output
 int pwd(){
@@ -109,20 +136,18 @@ int cd(int argc, const char *f1, const char *f2){
     source = opendir(f1); //opening first argument
     //dest = fopen(f2, "w"); //opening second argument
 
-    char input;
-    while(( input = readdir(source)) != NULL){
-        snprintf(sour, sizeof(sour), "%s/%s", sour, input->d_name);
-        snprintf(dest, sizeof(dest), "%s/%s", dest, input->d_name);
+    char input[1024];
+
+    //input = readdir(source);
+    while(( input == readdir(source)) != NULL){
+        snprintf(sour, sizeof(sour), "%s/%s", sour);
+        snprintf(dest, sizeof(dest), "%s/%s", dest);
+        //snprintf(sour, sizeof(sour), "%s/%s", sour, input->d_name);
+        //snprintf(dest, sizeof(dest), "%s/%s", dest, input->d_name);
     }
+
+
     closedir(source);
-
-
-
-
-    int ret1 = 1;
-    int ret2 = 1;
-    ret1 = checkDir(*f1);//checking if the destination file is a file or directory
-    ret2 = checkDir(*f2);
 
     return 0;
 
@@ -131,4 +156,17 @@ int checkDir(const char *filename) { //using stat to check if file or directory
     struct stat path;
     stat(filename, &path);
     return S_ISREG(path.st_mode);
+}
+int out(int argc, const char *f1){
+
+    FILE *output = fopen(f1, "w");
+    dup2(output, STDOUT_FILENO);
+    close(output);
+
+
+}
+int in(int argc, const char *f1){
+    int *input = fopen(f1, O_RDONLY);
+    dup2(input, STDIN_FILENO);
+    close(input);
 }
