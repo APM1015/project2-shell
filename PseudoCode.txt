@@ -1,7 +1,8 @@
 //main
 main()
-  use parse function to continously allow user to input
-  call other functions
+  use parse function to continously allow user to input and put in an array
+  while not ex 
+    then call other functions with if else statemnts
   
 //parse  
 parse()
@@ -32,3 +33,37 @@ cd()
   while arg1 is not null
     use snprintf to transfer to agr2 //transfer to destination directory
   close directory
+  
+  //redirection for stdout
+  out()
+    open file
+    use dup2 and STDOUT_FILENO
+    close file
+    
+ //redirection for stin
+ in()
+    open file
+    use dup2 and STDIN_FILENO
+    close file
+    
+//pipe
+pipe()
+  create array of pipes using [2] 
+  
+  for(number of pipes)
+    fork child processes
+    
+    check for errors
+    if pid == 0
+      then valid
+      if i == 0
+        //then first child
+        then close pipes and use dup2 and only STDOUT_FILENO
+      if i = last number of pipes
+        //then last child
+        then close pipe prior and use dup2 and only STDIN_FILENO
+      else
+        //handle middle cases not at ends
+        dup2 both STDIN_FILENO and STDOUT_FILENO since middle case
+        close pipes
+        
