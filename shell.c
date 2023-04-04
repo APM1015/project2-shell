@@ -52,7 +52,23 @@ int main(int argc, char *argv[]){
             in(argc, argv[1]);
         }
         else{
+            pid_t pid = fork();
 
+
+            if(pid < 0){
+                printf("error forking");
+                ex();
+            }
+            else if(pid == 0) { //child
+                char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
+                execv(args[0], args);
+
+
+            }
+            else{ //parent
+                int status;
+                waitpid(pid, &status, 0);//waiting for child to complete
+            }
         }
     }
 
