@@ -33,10 +33,7 @@ int main(int argc, char *argv[]) {
        // char **args = parse(shell, " ");
 
         char *path = getenv("PATH");
-        if(path == NULL){
-            printf("nice try");
-            return 1;
-        }
+
         char *tokenPath = strtok(path, ":");
         while (tokenPath != NULL) {
             char cmd[1000];
@@ -47,22 +44,18 @@ int main(int argc, char *argv[]) {
                     printf("error forking");
                     ex();
                 } else if (pid == 0) { //child
+                    if(strcmp(cmd, "wc") == 0){
+                        int name = open(cmd, O_RDONLY);
+                        dup2(name, STDIN_FILENO);
+                    }
                     printf("Executing command: %s\n", cmd);
                     char *args[] = {path, NULL};
                     execvp(cmd, args);
-                    perror("fail");
-                    exit(1);
-                    // char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
-                    //execv(args[0], args);
-                    // execv(cmd, args);
-
                 } else { //parent
                     int status;
                     waitpid(pid, &status, 0);//waiting for child to complete
                 }
-
             }
-
             tokenPath = strtok(NULL, ":");
         }
 
@@ -320,3 +313,4 @@ int pip(int argc){ //what is nummber of pipes????
      */
     return 0;
 }
+
