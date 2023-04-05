@@ -10,7 +10,6 @@
 #include <unistd.h>
 
 int cd(int argc, const char *source, const char *dest);
-int checkDir(const char *filename);
 int ex();
 int help();
 int pwd();
@@ -18,62 +17,118 @@ char **parse(char *line, char *delim);
 int pip(int argc);
 int out(int argc, const char *f1);
 int in(int argc, const char *f1);
+int path();
 
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
+    //char *argp[] = {"ls", "-l", NULL}; // Command to be executed
+    //char *argw[] = {"wc", NULL};
 
-    char line[1024];
+    char shell[1024];
 
-    while(1){
+    while (1) {
         printf("echo>");
-        fgets(line, 1024, stdin);
-        line[strlen(line) - 1] = '\0';
-        char **args = parse(line, " ");
+        fgets(shell, 1024, stdin);
+        shell[strlen(shell) - 1] = '\0';
+        char **args = parse(shell, " ");
 
-        if(args == NULL){
+        char *path = getenv("PATH");
+        char *dir = strtok(path, ":");
+        while (dir != NULL) {
+            char cmd[1000];
+            snprintf(cmd, 1000, "%s/%s", dir, shell);
+            if (access(cmd, X_OK) == 0) {
+                pid_t pid = fork();
+                if (pid < 0) {
+                    printf("error forking");
+                    ex();
+                } else if (pid == 0) { //child
+                    printf("Executing command: %s\n", cmd);
+                    execvp(cmd, NULL);
+                    perror("fail");
+                    exit(1);
+                    // char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
+                    //execv(args[0], args);
+                    // execv(cmd, args);
+
+                } else { //parent
+                    int status;
+                    waitpid(pid, &status, 0);//waiting for child to complete
+                }
+
+            }
+            dir = strtok(NULL, ":");
+        }
+
+        /*
+
+        if (args == NULL) {
             //nothing
-        }
-        else if(strcmp(args[0], "exit") == 0){
+        } else if (strcmp(args[0], "exit") == 0) {
             ex();
-        }
-        else if(strcmp(args[0], "pwd") == 0){
+        } else if (strcmp(args[0], "pwd") == 0) {
             pwd();
-        }
-        else if(strcmp(args[0], "help") == 0){
+        } else if (strcmp(args[0], "help") == 0) {
             help();
-        }
-        else if(strcmp(args[0], "cd") == 0){
+        } else if (strcmp(args[0], "cd") == 0) {
             cd(argc, argv[1], argv[2]);
-        }
-        else if(strcmp(args[0], ">") == 0){
+        } else if (strcmp(args[0], "|")) {
+            pip(args);
+        } else if (strcmp(args[0], ">") == 0) {
             out(argc, argv[1]);
-        }
-        else if(strcmp(args[0], "<") == 0){
+        } else if (strcmp(args[0], "<") == 0) {
             in(argc, argv[1]);
         }
-        else{
-            pid_t pid = fork();
-
-
-            if(pid < 0){
-                printf("error forking");
-                ex();
-            }
-            else if(pid == 0) { //child
-                char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
-                execv(args[0], args);
-
-
-            }
-            else{ //parent
-                int status;
-                waitpid(pid, &status, 0);//waiting for child to complete
-            }
+        else if (strcmp(args[0], "cd") == 0 || strcmp(args[0], "ls")){
+            path(&args);
         }
+         */
+
+        return 0;
     }
 
-    return 0;
+
+
 }
+int path(){
+    char shell[1024];
+
+    while (1) {
+        printf("echo>");
+        fgets(shell, 1024, stdin);
+        shell[strlen(shell) - 1] = '\0';
+        char **arl = parse(shell, " ");
+
+        char *path = getenv("PATH");
+        char *dir = strtok(path, ":");
+        while (dir != NULL) {
+            char cmd[1000];
+            snprintf(cmd, 1000, "%s/%s", dir, shell);
+            if (access(cmd, X_OK) == 0) {
+                pid_t pid = fork();
+                if (pid < 0) {
+                    printf("error forking");
+                    ex();
+                } else if (pid == 0) { //child
+                    printf("Executing command: %s\n", cmd);
+                    execvp(cmd, NULL);
+                    perror("fail");
+                    exit(1);
+                    // char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
+                    //execv(args[0], args);
+                    // execv(cmd, args);
+
+                } else { //parent
+                    int status;
+                    waitpid(pid, &status, 0);//waiting for child to complete
+                }
+
+            }
+            dir = strtok(NULL, ":");
+        }
+    }
+}
+
 
 char ** parse(char *line, char *delim){
 
@@ -168,16 +223,12 @@ int cd(int argc, const char *f1, const char *f2){
     return 0;
 
 }
-int checkDir(const char *filename) { //using stat to check if file or directory
-    struct stat path;
-    stat(filename, &path);
-    return S_ISREG(path.st_mode);
-}
+
 int out(int argc, const char *f1){
 
-    FILE *output = fopen(f1, "w");
+    FILE *output = fopen(f1, "w");//open file
     dup2(output, STDOUT_FILENO);
-    close(output);
+    close(output); //closing file
 
 
 }
@@ -186,3 +237,80 @@ int in(int argc, const char *f1){
     dup2(input, STDIN_FILENO);
     close(input);
 }
+int pip(int argc){ //what is nummber of pipes????
+    int pipe_array[argc-1][2]; //create array to hold pipes
+    pid_t pid[argc - 1];
+
+    for(int i = 0; i < argc-1; i++){
+        pipe(pipe_array[i]); //creating pipe for each child
+    }
+
+    for(int i = 0; i < argc-1; i++){
+        pid[i] = fork(); //forking all child processes
+
+        if(pid[i] < 0){
+            printf("error");
+            ex();
+        }
+        else if(pid[i] == 0){
+            if(i == 0){ //finds first child process
+                close(pipe_array[0][0]);
+                dup2(pipe_array[0][1], STDOUT_FILENO); //only needs STDOUT as nothing before it
+                close(pipe_array[0][1]);
+            }
+        }
+        else if(i == argc-1){ //last child process
+            close(pipe_array[argc-2][1]);//have to close second to last pipe
+            dup2(pipe_array[argc-2][0], STDIN_FILENO);
+            close(pipe_array[argc-2][0]);
+        }
+        else{//all other pipes that are not at ends
+            close(pipe_array[i-1][1]);
+            close(pipe_array[i][0]);
+
+            dup2(pipe_array[i-1][0], STDIN_FILENO); //Since middle needs STDIN
+            dup2(pipe_array[i][1], STDOUT_FILENO);  //and STDOUT
+
+            close(pipe_array[i-1][0]);
+            close(pipe_array[i][1]);
+
+        }
+    }
+
+
+
+    /*
+    int pipefd[argc];
+    pid_t pid;
+
+    if(pipe(pipefd) == -1){
+        ex();
+    }
+    pid = fork();
+    if(pid == -1){
+        ex();
+    }
+    if(pid == 0){
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+
+        char *const args[] = {"ls", "-l", NULL};
+        execvp(args[0], args);
+
+        ex();
+    }
+    else{
+        close(pipefd[1]);
+        dup2(pipefd[0], STDIN_FILENO);
+        close(pipefd[0]);
+
+        char *const args[] = {"wc", "-l", NULL};
+        execvp(args[0], args);
+
+        ex();
+    }
+     */
+    return 0;
+}
+
