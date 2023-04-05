@@ -233,7 +233,7 @@ int in(int argc, const char *f1){
     dup2(input, STDIN_FILENO);
     close(input);
 }
-int pip(int n){ //what is nummber of pipes????
+int pip(int n){ //n should be number of pipes
     int pipe_array[n-1][2]; //create array to hold pipes
     pid_t pid[n - 1];
 
