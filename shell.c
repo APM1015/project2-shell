@@ -30,13 +30,17 @@ int main(int argc, char *argv[]) {
         printf("echo>");
         fgets(shell, 1024, stdin);
         shell[strlen(shell) - 1] = '\0';
-        char **args = parse(shell, " ");
+       // char **args = parse(shell, " ");
 
         char *path = getenv("PATH");
-        char *dir = strtok(path, ":");
-        while (dir != NULL) {
+        if(path == NULL){
+            printf("nice try");
+            return 1;
+        }
+        char *tokenPath = strtok(path, ":");
+        while (tokenPath != NULL) {
             char cmd[1000];
-            snprintf(cmd, 1000, "%s/%s", dir, shell);
+            snprintf(cmd, 1000, "%s/%s", tokenPath, shell);
             if (access(cmd, X_OK) == 0) {
                 pid_t pid = fork();
                 if (pid < 0) {
@@ -44,7 +48,8 @@ int main(int argc, char *argv[]) {
                     ex();
                 } else if (pid == 0) { //child
                     printf("Executing command: %s\n", cmd);
-                    execvp(cmd, NULL);
+                    char *args[] = {path, NULL};
+                    execvp(cmd, args);
                     perror("fail");
                     exit(1);
                     // char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
@@ -57,8 +62,10 @@ int main(int argc, char *argv[]) {
                 }
 
             }
-            dir = strtok(NULL, ":");
+
+            tokenPath = strtok(NULL, ":");
         }
+
 
         /*
 
@@ -313,4 +320,3 @@ int pip(int argc){ //what is nummber of pipes????
      */
     return 0;
 }
-
