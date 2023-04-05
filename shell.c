@@ -30,37 +30,7 @@ int main(int argc, char *argv[]) {
         printf("echo>");
         fgets(shell, 1024, stdin);
         shell[strlen(shell) - 1] = '\0';
-       // char **args = parse(shell, " ");
-
-        char *path = getenv("PATH");
-
-        char *tokenPath = strtok(path, ":");
-        while (tokenPath != NULL) {
-            char cmd[1000];
-            snprintf(cmd, 1000, "%s/%s", tokenPath, shell);
-            if (access(cmd, X_OK) == 0) {
-                pid_t pid = fork();
-                if (pid < 0) {
-                    printf("error forking");
-                    ex();
-                } else if (pid == 0) { //child
-                    if(strcmp(cmd, "wc") == 0){
-                        int name = open(cmd, O_RDONLY);
-                        dup2(name, STDIN_FILENO);
-                    }
-                    printf("Executing command: %s\n", cmd);
-                    char *args[] = {path, NULL};
-                    execvp(cmd, args);
-                } else { //parent
-                    int status;
-                    waitpid(pid, &status, 0);//waiting for child to complete
-                }
-            }
-            tokenPath = strtok(NULL, ":");
-        }
-
-
-        /*
+        char **args = parse(shell, " ");
 
         if (args == NULL) {
             //nothing
@@ -80,13 +50,11 @@ int main(int argc, char *argv[]) {
             in(argc, argv[1]);
         }
         else if (strcmp(args[0], "cd") == 0 || strcmp(args[0], "ls")){
-            path(&args);
+            path();
         }
-         */
 
-        return 0;
     }
-
+    return 0;
 
 
 }
@@ -97,34 +65,33 @@ int path(){
         printf("echo>");
         fgets(shell, 1024, stdin);
         shell[strlen(shell) - 1] = '\0';
-        char **arl = parse(shell, " ");
+        // char **args = parse(shell, " ");
 
         char *path = getenv("PATH");
-        char *dir = strtok(path, ":");
-        while (dir != NULL) {
+
+        char *tokenPath = strtok(path, ":");
+        while (tokenPath != NULL) {
             char cmd[1000];
-            snprintf(cmd, 1000, "%s/%s", dir, shell);
+            snprintf(cmd, 1000, "%s/%s", tokenPath, shell);
             if (access(cmd, X_OK) == 0) {
                 pid_t pid = fork();
                 if (pid < 0) {
                     printf("error forking");
                     ex();
                 } else if (pid == 0) { //child
+                    if (strcmp(cmd, "wc") == 0) {
+                        int name = open(cmd, O_RDONLY);
+                        dup2(name, STDIN_FILENO);
+                    }
                     printf("Executing command: %s\n", cmd);
-                    execvp(cmd, NULL);
-                    perror("fail");
-                    exit(1);
-                    // char* args[] = {"/user/bin/wc", "-l", "main.c", NULL};
-                    //execv(args[0], args);
-                    // execv(cmd, args);
-
+                    char *args[] = {path, NULL};
+                    execvp(cmd, args);
                 } else { //parent
                     int status;
                     waitpid(pid, &status, 0);//waiting for child to complete
                 }
-
             }
-            dir = strtok(NULL, ":");
+            tokenPath = strtok(NULL, ":");
         }
     }
 }
