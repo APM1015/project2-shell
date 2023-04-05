@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
     //char *argw[] = {"wc", NULL};
 
     char shell[1024];
+  // path();
 
     while (1) {
         printf("echo>");
@@ -50,8 +51,35 @@ int main(int argc, char *argv[]) {
             in(argc, argv[1]);
         }
         else if (strcmp(args[0], "cd") == 0 || strcmp(args[0], "ls")){
-            path();
+            //path();
+            char *path = getenv("PATH"); //getting path
+
+            char *tokenPath = strtok(path, ":");
+            while (tokenPath != NULL) {
+                char cmd[1000];
+                snprintf(cmd, 1000, "%s/%s", tokenPath, shell);
+                if (access(cmd, X_OK) == 0) { //was not working so implemented the access() to validate
+                    pid_t pid = fork();
+                    if (pid < 0) { //invalid pid value
+                        printf("error forking");
+                        ex();
+                    } else if (pid == 0) { //child
+                        if (strcmp(cmd, "wc") == 0) {//attempted to fix wc but not workinng
+                            int name = open(cmd, O_RDONLY);
+                            dup2(name, STDIN_FILENO);
+                        }
+                        printf("Executing command: %s\n", cmd);
+                        char *args[] = {path, NULL}; //fixes problem of argv[0] being NULL
+                        execvp(cmd, args);
+                    } else { //parent
+                        int status;
+                        waitpid(pid, &status, 0);//waiting for child to complete
+                    }
+                }
+                tokenPath = strtok(NULL, ":");
+            }    
         }
+
 
     }
     return 0;
@@ -65,26 +93,26 @@ int path(){
         printf("echo>");
         fgets(shell, 1024, stdin);
         shell[strlen(shell) - 1] = '\0';
-        // char **args = parse(shell, " ");
+        char **args = parse(shell, " ");
 
-        char *path = getenv("PATH");
+        char *path = getenv("PATH"); //getting path
 
         char *tokenPath = strtok(path, ":");
         while (tokenPath != NULL) {
             char cmd[1000];
             snprintf(cmd, 1000, "%s/%s", tokenPath, shell);
-            if (access(cmd, X_OK) == 0) {
+            if (access(cmd, X_OK) == 0) { //was not working so implemented the access() to validate
                 pid_t pid = fork();
-                if (pid < 0) {
+                if (pid < 0) { //invalid pid value
                     printf("error forking");
                     ex();
                 } else if (pid == 0) { //child
-                    if (strcmp(cmd, "wc") == 0) {
+                    if (strcmp(cmd, "wc") == 0) {//attempted to fix wc but not workinng
                         int name = open(cmd, O_RDONLY);
                         dup2(name, STDIN_FILENO);
                     }
                     printf("Executing command: %s\n", cmd);
-                    char *args[] = {path, NULL};
+                    char *args[] = {path, NULL}; //fixes problem of argv[0] being NULL
                     execvp(cmd, args);
                 } else { //parent
                     int status;
