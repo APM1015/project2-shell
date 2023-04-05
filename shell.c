@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   // path();
 
     while (1) {
-        printf("echo>");
+        printf(">");
 
         fgets(shell, 1024, stdin);
         shell[strlen(shell) - 1] = '\0';
@@ -71,11 +71,11 @@ int main(int argc, char *argv[]) {
             help();
         } else if (strcmp(args[0], "cd") == 0) {
             cd(argc, argv[1], argv[2]);
-        } else if (strcmp(args[0], "|")) {
+        } else if (strcmp(args[1][0], "|") == 0) {
             pip(args);
-        } else if (strcmp(args[0], ">") == 0) {
+        } else if (strcmp(args[1], ">") == 0) {
             out(argc, argv[1]);
-        } else if (strcmp(args[0], "<") == 0) {
+        } else if (strcmp(args[1], "<") == 0) {
             in(argc, argv[1]);
         }
 
@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
 
 
 }
+/*
 int path(){
     char shell[1024];
 
@@ -122,6 +123,7 @@ int path(){
         }
     }
 }
+ */
 
 
 char ** parse(char *line, char *delim){
@@ -231,15 +233,15 @@ int in(int argc, const char *f1){
     dup2(input, STDIN_FILENO);
     close(input);
 }
-int pip(int argc){ //what is nummber of pipes????
-    int pipe_array[argc-1][2]; //create array to hold pipes
-    pid_t pid[argc - 1];
+int pip(int n){ //what is nummber of pipes????
+    int pipe_array[n-1][2]; //create array to hold pipes
+    pid_t pid[n - 1];
 
-    for(int i = 0; i < argc-1; i++){
+    for(int i = 0; i < n-1; i++){
         pipe(pipe_array[i]); //creating pipe for each child
     }
 
-    for(int i = 0; i < argc-1; i++){
+    for(int i = 0; i < n-1; i++){
         pid[i] = fork(); //forking all child processes
 
         if(pid[i] < 0){
@@ -248,15 +250,15 @@ int pip(int argc){ //what is nummber of pipes????
         }
         else if(pid[i] == 0){
             if(i == 0){ //finds first child process
-                close(pipe_array[0][0]);
+                close(pipe_array[0][0]); //close read
                 dup2(pipe_array[0][1], STDOUT_FILENO); //only needs STDOUT as nothing before it
-                close(pipe_array[0][1]);
+                close(pipe_array[0][1]);//close write
             }
         }
-        else if(i == argc-1){ //last child process
-            close(pipe_array[argc-2][1]);//have to close second to last pipe
-            dup2(pipe_array[argc-2][0], STDIN_FILENO);
-            close(pipe_array[argc-2][0]);
+        else if(i == n-1){ //last child process
+            close(pipe_array[n-2][1]);//have to close write and n-2 because n-1 is last so one before
+            dup2(pipe_array[n-2][0], STDIN_FILENO);
+            close(pipe_array[n-2][0]); //close read
         }
         else{//all other pipes that are not at ends
             close(pipe_array[i-1][1]);
